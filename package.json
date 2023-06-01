@@ -1,0 +1,24 @@
+{
+  "name": "symphony",
+  "version": "1.0.0",
+  "description": "Extensive bot API for Minecraft 1.19+. Build on PrismarineJS/Mineflayer.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leppy-oss/symphony.git"
+  },
+  "author": "Leppy",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Leppy-oss/symphony/issues"
+  },
+  "homepage": "https://github.com/Leppy-oss/symphony#readme",
+  "dependencies": {
+    "dotenv": "^16.1.3",
+    "mineflayer": "^4.8.1",
+    "nodemon": "^2.0.22"
+  }
+}
