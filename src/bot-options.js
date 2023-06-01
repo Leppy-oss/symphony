@@ -8,7 +8,9 @@ module.exports = {
     version: '1.19'
     },
     botOptions: {
+        viewer: false,
         autoReconnect: true,
         reconnectTimeout: 1000, // ms
+        caseSensitive: false
     }
 }
