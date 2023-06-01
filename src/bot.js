@@ -1,8 +1,9 @@
 const options = require('./bot-options');
 const chalk = require('chalk');
 const mineflayer = require('mineflayer');
+const Vec3 = require('vec3');
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer');
-const { pathfinder, Movements, goals: { GoalNear } } = require('mineflayer-pathfinder')
+const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 require('dotenv').config({path:'.env'});
 
 module.exports = {
@@ -11,6 +12,7 @@ module.exports = {
         RECONNECTING: 1,
         COMING: 2,
         FOLLOWING: 3,
+        LOOK_AT: 4
     },
     Bot: class {
         constructor(username, password, auth) {
@@ -18,44 +20,58 @@ module.exports = {
             this.master = '';
             this.client = null;
             this.rcC = false;
-            this.state = this.States.IDLE;
-            if(process.env.MASTER !== undefined) this.setMaster(process.env.MASTER);
+            this.stateList = this.States.IDLE;
+            this.prevState = this.States.IDLE;
+            this.loopPrevState = this.States.IDLE;
             this.botOptions = options.botOptions;
             this.connectionOptions = options.connectionOptions;
             this.connectionOptions['username'] = username;
             this.connectionOptions['password'] = password;
             this.connectionOptions['auth'] = auth;
+            if(process.env.MASTER !== undefined) this.setMaster(process.env.MASTER);
             this.updateIntervalID = setInterval(this.update, 100); // updates the bot 10x a second
         }
         log = (username, ...msg) => {
+            if (username === null) username = chalk.ansi256(201)(this.connectionOptions.username);
             console.log(`<${username}>:`, ...msg);
         }
         update = () => {
-            if (this.state == this.States.FOLLOWING) {
-                const target = this.client.players[this.master].entity;
-                if (target) this.pathTo(target.position);
-            }
-            else if (this.state == this.States.IDLE) {
-                print('stop');
-                this.client.pathfinder.stop();
-            }
+            try {
+                switch (this.state) {
+                    case this.States.FOLLOWING: {
+                        break;
+                    }
+                    case this.States.IDLE: {
+                        if (this.loopPrevState != this.States.IDLE) {
+                            this.client.pathfinder.stop();
+                        }
+                        break;
+                    }
+                    case this.States.LOOK_AT: {
+                        const target = this.client.players[this.master].entity;
+                        this.client.lookAt(target.position.plus(Vec3(0, 1.5, 0)));
+                        break;
+                    }
+                }
+                this.loopPrevState = this.state;
+            } catch(e) {}
         }
         setMaster = (master) => {
             this.master = master;
-            console.log('New master: ' + master);
+            this.log(null, `New master, ${chalk.ansi256(196)(master)}`);
         }
         connect = () => {
             this.client = mineflayer.createBot(this.connectionOptions);
             this.init();
         }
         reconnect = () => {
-            console.log('Attempting to reconnect');
+            this.log(null, chalk.ansi256(154)('Attempting to reconnect'));
             try {
                 this.connect();
                 this.rcC = true;
-                console.log('Successfully reconnected');
+                this.log(null, chalk.ansi256(112)('Successfully reconnected'));
             } catch (e) {
-                console.log('Unable to reconnect, error: ' + e);
+                this.log(null, chalk.ansi256(196)('Unable to reconnect, error: ' + e));
             }
         }
         init = () => {
@@ -63,43 +79,49 @@ module.exports = {
             this.client.on('login', this.loginHandler);
             this.client.on('chat', this.chatHandler);
             this.client.on('death', this.deathHandler);
-            this.client.on('kick', this.kickHandler); // should also handle kicks
             this.client.on('end', this.endHandler); // should also handle kicks
             this.client.on('error', this.errorHandler);
             this.client.on('spawn', this.spawnHandler);
         }
         setState = (state) => {
+            this.prevState = this.state;
             this.state = state;
         }
         onRcC = () => {
             this.client.chat('Hello world again');
         }
         spawnHandler = () => {
-            console.log('Bot spawned in');
+            this.log(null, chalk.ansi256(75)('Bot spawned in'));
         }
         disconnect = () => { // will NOT attempt to reconnect, no matter what. this terminates the process.
             this.client.quit();
             clearInterval(this.updateIntervalID);
-            process.exit();
+            // process.exit();
         }
         endHandler = (reason) => {
-            if(reason === 'socketClosed') this.kickHandler();
-            else console.log('Bot disconnected');
+            if(reason === 'socketClosed') this.kickHandler(reason);
+            else this.log(null, chalk.ansi256(196)('Bot disconnected'));
         }
         deathHandler = () => {
             this.client.chat('Ow that hurt');
-            console.log('Bot died');
+            this.log(null, chalk.ansi256(125)('Bot died'));
         }
         loginHandler = () => {
             if(this.rcC) this.onRcC();
             else this.client.chat('Hello World');
-            this.log(this.connectionOptions.username, chalk.ansi256(46)('Bot successfully logged in'));
+            this.log(null, chalk.ansi256(120)('Bot successfully logged in'));
             if(this.botOptions.viewer) mineflayerViewer(this.client, { port: 1234, firstPerson: false });
         }
-        pathTo = (position, movement=new Movements(this.client), tolerance=1) => {
-            const { x: tX, y: tY, z: tZ } = position;
+        pathTo = (entity, follow=false, tolerance=1, movement=new Movements(this.client)) => {
+            movement.allowParkour = true;
+            movement.allowSprinting = true;
+            movement.canDig = true;
+            movement.maxDropDown = 6;
+            movement.liquidCost = 5;
+            const { x: tX, y: tY, z: tZ } = entity.position;
             this.client.pathfinder.setMovements(movement);
-            this.client.pathfinder.setGoal(new GoalNear(tX, tY, tZ, tolerance));
+            const goal = follow? new GoalFollow(entity, tolerance) : new GoalNear(tX, tY, tZ, tolerance);
+            this.client.pathfinder.setGoal(goal, true);
         }
         chatLog = (username, ...msg) => {
             if (!require('../index').botUsernames.includes(username)) this.log(chalk.ansi256(98)(username), ...msg);
@@ -112,35 +134,47 @@ module.exports = {
                 this.client.chat('Yes master');
                 if (message === 'kys') {
                     this.client.chat('Goodbye master');
-                    this.client.waitForTicks(10).then(this.client.quit);
+                    this.client.waitForTicks(10).then(this.disconnect);
                 }
                 else if (message === 'come') {
                     this.setState(this.States.COMING);
                     const target = this.client.players[this.master].entity;
                     if (!target) {
                         this.client.chat('Apologies master, cannot see you, master');
-                        return
+                        return;
                     }
+                    this.log(null, chalk.ansi256(214)('Coming to master'));
                     this.client.chat('Coming, master');
-                    this.pathTo(target.position);
+                    this.pathTo(target);
                 }
                 else if (message === 'follow') {
                     this.setState(this.States.FOLLOWING);
-                    if (!this.client.players[this.master].entity) this.client.chat('Apologies master, cannot see you, master');
+                    if (!this.client.players[this.master].entity) {
+                        this.client.chat('Apologies master, cannot see you, master');
+                        return;
+                    }
+                    this.log(null, chalk.ansi256(214)('Now following master'));
+                    this.pathTo(this.client.players[this.master].entity, true);
                     this.client.chat('Following, master');
                 }
                 else if (message === 'stop') {
+                    this.log(null, chalk.ansi256(214)('Stopping all actions'));
                     this.setState(this.States.IDLE);
                     this.client.chat('Stopping all actions, master');
                 }
+                else if (message === 'look at me') {
+                    this.log(null, chalk.ansi256(214)('Looking at master ').concat(chalk.ansi256(196)(this.master)));
+                    this.setState(this.States.LOOK_AT);
+                    this.client.chat('Looking at you, master');
+                }
             }
         }
-        kickHandler = (e) => {
-            console.log('Bot was kicked ' + e);
+        kickHandler = (reason) => {
+            this.log(null, chalk.ansi256(196)('Bot was kicked for reason ' + reason));
             if(this.botOptions.autoReconnect) setTimeout(this.reconnect, this.botOptions.reconnectTimeout);
         }
         errorHandler = (e) => {
-            console.error(e);
+            this.log(null, chalk.ansi256(196)('An error occurred - ' + e))
         }
     }
 };
