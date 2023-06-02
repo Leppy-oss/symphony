@@ -1,9 +1,11 @@
 const options = require('./bot-options');
 const chalk = require('chalk');
 const mineflayer = require('mineflayer');
-const Vec3 = require('vec3');
+const vec3 = require('vec3');
+const minecraftData = require('minecraft-data')('1.19');
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer');
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
+const commands = require('./furnace-bot-commands');
 require('dotenv').config({path:'.env'});
 
 module.exports = {
@@ -49,7 +51,7 @@ module.exports = {
                     }
                     case this.States.LOOK_AT: {
                         const target = this.client.players[this.master].entity;
-                        this.client.lookAt(target.position.plus(Vec3(0, 1.5, 0)));
+                        this.client.lookAt(target.position.plus(vec3(0, 1.5, 0)));
                         break;
                     }
                 }
@@ -112,7 +114,15 @@ module.exports = {
             this.log(null, chalk.ansi256(120)('Bot successfully logged in'));
             if(this.botOptions.viewer) mineflayerViewer(this.client, { port: 1234, firstPerson: false });
         }
-        pathTo = (entity, follow=false, tolerance=1, movement=new Movements(this.client)) => {
+        getMaster = () => {
+            if(this.master != '') return this.client.players[this.master];
+        }
+        followMaster = () => {
+            const master = this.getMaster();
+            if (master) this.pathTo(master.entity, true);
+            return master;
+        }
+        pathTo = async (entity, follow=false, tolerance=1, movement=new Movements(this.client)) => {
             movement.allowParkour = true;
             movement.allowSprinting = true;
             movement.canDig = true;
@@ -126,12 +136,15 @@ module.exports = {
         chatLog = (username, ...msg) => {
             if (!require('../index').botUsernames.includes(username)) this.log(chalk.ansi256(98)(username), ...msg);
         }
-        chatHandler = (username, message) => {
+        chatHandler = async (username, message) => {
             if (!this.botOptions.caseSensitive) message = message.toLowerCase();
             if (username === this.client.username) return;
             this.chatLog(username, message);
             if (username === this.master) {
-                this.client.chat('Yes master');
+                if (message in commands) {
+                    this.client.chat(commands[message].reply);
+                    await commands[message].action(this.client);
+                }
                 if (message === 'kys') {
                     this.client.chat('Goodbye master');
                     this.client.waitForTicks(10).then(this.disconnect);
@@ -140,7 +153,7 @@ module.exports = {
                     this.setState(this.States.COMING);
                     const target = this.client.players[this.master].entity;
                     if (!target) {
-                        this.client.chat('Apologies master, cannot see you, master');
+                        this.client.chat('Apologies master, cannot see you');
                         return;
                     }
                     this.log(null, chalk.ansi256(214)('Coming to master'));
@@ -150,11 +163,11 @@ module.exports = {
                 else if (message === 'follow') {
                     this.setState(this.States.FOLLOWING);
                     if (!this.client.players[this.master].entity) {
-                        this.client.chat('Apologies master, cannot see you, master');
+                        this.client.chat('Apologies master, cannot see you');
                         return;
                     }
                     this.log(null, chalk.ansi256(214)('Now following master'));
-                    this.pathTo(this.client.players[this.master].entity, true);
+                    this.followMaster();
                     this.client.chat('Following, master');
                 }
                 else if (message === 'stop') {
