@@ -2,6 +2,7 @@ const mineflayer = require('mineflayer');
 const Logger = require('./logger');
 const Command = require('./command-pair');
 const BotEx = require('./bot-ex');
+const colors = require('./logger-colors');
 const { minecraftData, isSmeltable } = require('./util/mcdata-ex');
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 
@@ -37,7 +38,7 @@ module.exports = {
         async(botEx) => {
             botEx.client.chat('Goodbye master');
             await botEx.client.waitForTicks(10)
-            botEx.disconnect;
+            botEx.disconnect();
         }),
     'come': new Command(
         /**
@@ -71,7 +72,7 @@ module.exports = {
          * @param {BotEx} botEx 
          */
         async(botEx) => {
-            botEx.log(null, chalk.ansi256(214)('Stopping all actions'));
+            botEx.logger.actionLog('Stopping all actions');
             botEx.setState(botEx.States.IDLE);
             botEx.client.chat('Stopping all actions, master');
         }),
@@ -80,7 +81,7 @@ module.exports = {
          * @param {BotEx} botEx
          */
         async(botEx) => {
-            botEx.log(null, chalk.ansi256(214)('Looking at master ').concat(chalk.ansi256(196)(botEx.master)));
+            botEx.logger.log(chalk.ansi256(colors.action)('Looking at master ').concat(chalk.ansi256(colors.master)(botEx.master)));
             botEx.setState(botEx.States.LOOK_AT);
             botEx.client.chat('Looking at you, master');
         })

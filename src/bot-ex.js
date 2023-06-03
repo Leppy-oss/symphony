@@ -34,8 +34,10 @@ module.exports = class {
         this.getMaster = this.getMaster.bind(this);
         this.followMaster = this.followMaster.bind(this);
         this.goto = this.goto.bind(this);
+        this.follow = this.follow.bind(this);
         this.chatHandler = this.chatHandler.bind(this);
         this.chatActions = this.chatActions.bind(this);
+        this.deathHandler = this.deathHandler.bind(this);
         this.kickHandler = this.kickHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
 
@@ -105,7 +107,7 @@ module.exports = class {
     }
     followMaster() {
             const master = this.getMaster();
-            if (master) this.follow(master, 1, true, true);
+            if (master) this.follow(master.entity, 1, true, true);
             return master;
         }
         /**
@@ -134,16 +136,16 @@ module.exports = class {
          * @param {Boolean} canDig 
          */
     follow(entity, tolerance = 1, canPlace = false, canDig = false) {
-        const movements = new Movements();
-        movement.allowParkour = true;
-        movement.allowSprinting = true;
-        movement.canDig = canDig;
+        const movements = new Movements(this.client);
+        movements.allowParkour = true;
+        movements.allowSprinting = true;
+        movements.canDig = canDig;
         if (!canPlace) movements.scafoldingBlocks.length = 0;
-        movement.maxDropDown = 6;
-        movement.liquidCost = 5; // Try to avoid liquids
+        movements.maxDropDown = 6;
+        movements.liquidCost = 5; // Try to avoid liquids
         this.client.pathfinder.setMovements(movements);
         const goal = new GoalFollow(entity, tolerance);
-        this.client.pathfinder.setGoal(goal);
+        this.client.pathfinder.setGoal(goal, true);
     }
     async chatHandler(username, message) {
         if (!this.botOptions.caseSensitive) message = message.toLowerCase();
