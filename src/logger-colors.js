@@ -1,6 +1,7 @@
 const chalk = require('chalk');
 
 module.exports = {
+    login: chalk.ansi256(120),
     master: chalk.ansi256(196),
     kick: chalk.ansi256(196),
     disconnect: chalk.ansi256(196),
@@ -12,5 +13,6 @@ module.exports = {
     attemptReconnect: chalk.ansi256(154),
     successfulReconnect: chalk.ansi256(112),
     unsuccessfulReconnect: chalk.ansi256(196),
-    bot: chalk.ansi256(201)
+    bot: chalk.ansi256(201),
+    death: chalk.ansi256(125)
 }

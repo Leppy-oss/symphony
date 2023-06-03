@@ -8,7 +8,7 @@ const Logger = require('./logger');
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer');
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 const commands = require('./furnace-bot-commands');
-require('dotenv').config({path:'.env'});
+require('dotenv').config({ path: '.env' });
 const StateManager = require('./framework/state');
 const StateController = require('./framework/state-controller');
 
@@ -24,32 +24,26 @@ module.exports = {
         constructor(username, password, auth) {
             super(username, password, auth);
             this.States = module.exports.States;
+            this.chatActions = this.chatActions.bind(this);
         }
-        update = () => {
+        update() {
             super.update();
         }
-        init = () => {
+        init() {
             super.init();
         }
-        setState = (state) => {
+        setState(state) {
             this.controller.changeState(state);
         }
-        deathHandler = () => {
+        deathHandler() {
             super.deathHandler();
         }
-        loginHandler = () => {
+        loginHandler() {
             super.loginHandler();
         }
-        chatActions = (message) => {
-            super.chatActions(message);
-            if (message in commands) commands[message].action(this.client)
-        }
-        kickHandler = (reason) => {
-            this.log(null, chalk.ansi256(196)('Bot was kicked for reason ' + reason));
-            if(this.botOptions.autoReconnect) setTimeout(this.reconnect, this.botOptions.reconnectTimeout);
-        }
-        errorHandler = (e) => {
-            this.log(null, chalk.ansi256(196)('An error occurred - ' + e))
+        async chatActions(message) {
+            await super.chatActions(message);
+            if (message in commands) await commands[message].action(this)
         }
     }
 };

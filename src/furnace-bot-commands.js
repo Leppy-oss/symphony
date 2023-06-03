@@ -10,7 +10,7 @@ module.exports = {
         /**
          * @param {BotEx} botEx
          */
-        async (botEx) => {
+        async(botEx) => {
             botEx.client.chat('Grabbing smeltable items from nearest chest');
             const chest_id = minecraftData.blocksByName['chest'].id;
             const chest = await botEx.client.openContainer(botEx.client.findBlock({
@@ -26,7 +26,7 @@ module.exports = {
         /**
          * @param {BotEx} botEx
          */
-        async (botEx) => {
+        async(botEx) => {
             botEx.client.chat('Printing debug info to log');
             console.log(botEx.client.inventory.items())
         }),
@@ -34,43 +34,54 @@ module.exports = {
         /**
          * @param {BotEx} botEx
          */
-        async (botEx) => {
+        async(botEx) => {
             botEx.client.chat('Goodbye master');
-            botEx.client.waitForTicks(10).then(this.disconnect);
+            await botEx.client.waitForTicks(10)
+            botEx.disconnect;
         }),
     'come': new Command(
         /**
          * @param {BotEx} botEx
          */
-        async (botEx) => {
-            this.setState(this.States.COMING);
-            const target = botEx.client.players[this.master].entity;
+        async(botEx) => {
+            const target = botEx.client.players[botEx.master].entity;
             if (!target) {
                 botEx.client.chat('Apologies master, cannot see you');
                 return;
             }
-            this.log(null, chalk.ansi256(214)('Coming to master'));
+            botEx.logger.actionLog('Coming to master');
             botEx.client.chat('Coming, master');
-            this.pathTo(target);
-        })
-    'follow') {
-            this.setState(this.States.FOLLOWING);
-            if (!botEx.client.players[this.master].entity) {
+            botEx.goto(target.position, 0, true, true);
+        }),
+    'follow': new Command(
+        /**
+         * @param {BotEx} botEx 
+         */
+        async(botEx) => {
+            if (!botEx.client.players[botEx.master].entity) {
                 botEx.client.chat('Apologies master, cannot see you');
                 return;
             }
-            this.log(null, chalk.ansi256(214)('Now following master'));
-            this.followMaster();
+            botEx.logger.actionLog('Now following master');
             botEx.client.chat('Following, master');
-        }
-        else if (message === 'stop') {
-            this.log(null, chalk.ansi256(214)('Stopping all actions'));
-            this.setState(this.States.IDLE);
+            botEx.followMaster();
+        }),
+    'stop': new Command(
+        /**
+         * @param {BotEx} botEx 
+         */
+        async(botEx) => {
+            botEx.log(null, chalk.ansi256(214)('Stopping all actions'));
+            botEx.setState(botEx.States.IDLE);
             botEx.client.chat('Stopping all actions, master');
-        }
-        else if (message === 'look at me') {
-            this.log(null, chalk.ansi256(214)('Looking at master ').concat(chalk.ansi256(196)(this.master)));
-            this.setState(this.States.LOOK_AT);
+        }),
+    'look at me': new Command(
+        /**
+         * @param {BotEx} botEx
+         */
+        async(botEx) => {
+            botEx.log(null, chalk.ansi256(214)('Looking at master ').concat(chalk.ansi256(196)(botEx.master)));
+            botEx.setState(botEx.States.LOOK_AT);
             botEx.client.chat('Looking at you, master');
-        }
+        })
 }
