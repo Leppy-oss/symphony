@@ -3,7 +3,7 @@ const { Item } = require('prismarine-item')
 const mcData = require('minecraft-data')('1.19');
 
 module.exports = {
-    minecraftData: require('minecraft-data')(require('./bot-options').connectionOptions.version),
+    minecraftData: require('minecraft-data')(require('../bot-options').connectionOptions.version),
     smeltable: [
         'porkchop',
         'cod',

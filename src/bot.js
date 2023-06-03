@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const mineflayer = require('mineflayer');
 const vec3 = require('vec3');
 const minecraftData = require('minecraft-data')('1.19');
+const Logger = require('./logger');
 const { mineflayer: mineflayerViewer } = require('prismarine-viewer');
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 const commands = require('./furnace-bot-commands');
@@ -30,7 +31,8 @@ module.exports = {
             this.connectionOptions['username'] = username;
             this.connectionOptions['password'] = password;
             this.connectionOptions['auth'] = auth;
-            if(process.env.MASTER !== undefined) this.setMaster(process.env.MASTER);
+            this.logger = new Logger(this.connectionOptions.username);
+            if (process.env.MASTER !== undefined) this.setMaster(process.env.MASTER);
             this.updateIntervalID = setInterval(this.update, 100); // updates the bot 10x a second
         }
         log = (username, ...msg) => {
@@ -141,10 +143,7 @@ module.exports = {
             if (username === this.client.username) return;
             this.chatLog(username, message);
             if (username === this.master) {
-                if (message in commands) {
-                    this.client.chat(commands[message].reply);
-                    await commands[message].action(this.client);
-                }
+                if (message in commands) await commands[message].action(this.client, this.logger);
                 if (message === 'kys') {
                     this.client.chat('Goodbye master');
                     this.client.waitForTicks(10).then(this.disconnect);

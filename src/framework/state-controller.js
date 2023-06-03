@@ -23,15 +23,3 @@ module.exports = {
         }
     }
 }
-
-state.createState('b').setLoop((self, change) => {
-    console.log(self.name);
-    change('a');
-});
-
-const stateController = new module.exports.StateController(new state.State('a').setLoop((self, change) => {
-    console.log(self.name);
-    change('b');
-}));
-
-setInterval(stateController.update, 1000)
