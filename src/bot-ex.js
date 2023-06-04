@@ -116,7 +116,7 @@ module.exports = class {
          * @param {Boolean} canPlace 
          * @param {Boolean} canDig 
          */
-    goto(position, tolerance = 0, canPlace = false, canDig = false) {
+    async goto(position, tolerance = 0, canPlace = false, canDig = false) {
             const movements = new Movements(this.client);
             movements.allowParkour = true;
             movements.allowSprinting = true;
@@ -127,7 +127,7 @@ module.exports = class {
             this.client.pathfinder.setMovements(movements);
             const { x: tX, y: tY, z: tZ } = position;
             const goal = new GoalNear(tX, tY, tZ, tolerance);
-            this.client.pathfinder.setGoal(goal);
+            await this.client.pathfinder.goto(goal);
         }
         /**
          * @param {Entity} entity 

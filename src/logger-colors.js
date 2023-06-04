@@ -14,5 +14,6 @@ module.exports = {
     successfulReconnect: chalk.ansi256(112),
     unsuccessfulReconnect: chalk.ansi256(196),
     bot: chalk.ansi256(201),
-    death: chalk.ansi256(125)
+    death: chalk.ansi256(125),
+    debug: chalk.ansi256(61)
 }

@@ -1,12 +1,44 @@
-const mineflayer = require('mineflayer');
-const Logger = require('./logger');
+const chalk = require('chalk');
 const Command = require('./command-pair');
 const BotEx = require('./bot-ex');
 const colors = require('./logger-colors');
-const { minecraftData, isSmeltable } = require('./util/mcdata-ex');
+const { minecraftData, isSmeltable, canBeEnchanted } = require('./util/mcdata-ex');
 const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 
 module.exports = {
+    'open etable': new Command(
+        /**
+         * @param {BotEx} botEx 
+         */
+        async(botEx) => {
+            const table_id = minecraftData.blocksByName['enchanting_table'].id;
+            const lapis_id = minecraftData.itemsByName['lapis_lazuli'].id;
+            const table_block = botEx.client.findBlock({
+                matching: table_id,
+                maxDistance: 20
+            });
+            console.log(table_block);
+            if (table_block.position.distanceTo(botEx.client.entity.position) > 3) await botEx.goto(table_block.position, 1);
+            const table = await botEx.client.openEnchantmentTable(table_block);
+            botEx.logger.debugLog(`Bot currently has ${botEx.client.experience.level} levels`);
+            const lapis = table.items().find(item => item.type == lapis_id);
+            const sword = table.items().find(item => item.name.includes('sword'));
+
+            if (lapis && sword) {
+                console.log(table.slots);
+                await table.putTargetItem(sword);
+                await table.putLapis(lapis);
+                await botEx.client.waitForTicks(20);
+                console.log(table.enchantments);
+                table.enchant(0).then(async (item) => {
+                    console.log(await table.takeTargetItem());
+                    console.log(item);
+                    console.log(botEx.client.inventory.items());
+                });
+            }
+            table.close();
+        }
+    ),
     'grab chest': new Command(
         /**
          * @param {BotEx} botEx
@@ -14,12 +46,14 @@ module.exports = {
         async(botEx) => {
             botEx.client.chat('Grabbing smeltable items from nearest chest');
             const chest_id = minecraftData.blocksByName['chest'].id;
+            const lapis_id = minecraftData.itemsByName['lapis_lazuli'].id;
             const chest = await botEx.client.openContainer(botEx.client.findBlock({
                 matching: chest_id,
                 maxDistance: 5
             }));
             for (item of chest.containerItems()) {
-                if (isSmeltable(item)) await chest.withdraw(item.type, null, chest.containerCount(item.type));
+                if (isSmeltable(item) || canBeEnchanted(item) || item.type === lapis_id) await chest.withdraw(item.type, null, chest.containerCount(item.type));
+                console.log(chest.slots);
             }
             chest.close();
         }),
@@ -73,7 +107,6 @@ module.exports = {
          */
         async(botEx) => {
             botEx.logger.actionLog('Stopping all actions');
-            botEx.setState(botEx.States.IDLE);
             botEx.client.chat('Stopping all actions, master');
         }),
     'look at me': new Command(
@@ -82,7 +115,6 @@ module.exports = {
          */
         async(botEx) => {
             botEx.logger.log(chalk.ansi256(colors.action)('Looking at master ').concat(chalk.ansi256(colors.master)(botEx.master)));
-            botEx.setState(botEx.States.LOOK_AT);
             botEx.client.chat('Looking at you, master');
         })
 }

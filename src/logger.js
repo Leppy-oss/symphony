@@ -25,4 +25,7 @@ module.exports = class {
     warningLog = (msg) => {
         this.log(colors.error(msg));
     }
+    debugLog = (msg) => {
+        this.log(colors.debug(msg));
+    }
 }

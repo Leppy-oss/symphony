@@ -1,7 +1,7 @@
 module.exports = {
     connectionOptions: {
         host: 'localhost',
-        port: '61336',
+        port: '56308',
         username: 'Test_Bot',
         password: '',
         auth: 'offline',

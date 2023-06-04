@@ -315,7 +315,90 @@ module.exports = {
     /**
      * @param {Item} item 
      */
-    isFuel : (item) => {
+    isFuel: (item) => {
         return module.exports.fuel.includes(item.name);
-    }
+    },
+    enchantable: [
+        'leather_helmet',
+        'gold_helmet',
+        'chainmail_helmet',
+        'iron_helmet',
+        'diamond_helmet',
+        'netherite_helmet',
+        'leather_chestplate',
+        'gold_chestplate',
+        'chainmail_chestplate',
+        'iron_chestplate',
+        'diamond_chestplate',
+        'netherite_chestplate',
+        'leather_leggings',
+        'gold_leggings',
+        'chainmail_leggings',
+        'iron_leggings',
+        'diamond_leggings',
+        'netherite_leggings',
+        'leather_boots',
+        'gold_boots',
+        'chainmail_boots',
+        'iron_boots',
+        'diamond_boots',
+        'netherite_boots',
+        'leather_sword',
+        'gold_sword',
+        'chainmail_sword',
+        'iron_sword',
+        'diamond_sword',
+        'netherite_sword',
+        'leather_pickaxe',
+        'gold_pickaxe',
+        'chainmail_pickaxe',
+        'iron_pickaxe',
+        'diamond_pickaxe',
+        'netherite_pickaxe',
+        'leather_axe',
+        'gold_axe',
+        'chainmail_axe',
+        'iron_axe',
+        'diamond_axe',
+        'netherite_axe',
+        'leather_shovel',
+        'gold_shovel',
+        'chainmail_shovel',
+        'iron_shovel',
+        'diamond_shovel',
+        'netherite_shovel',
+        'leather_hoe',
+        'gold_hoe',
+        'chainmail_hoe',
+        'iron_hoe',
+        'diamond_hoe',
+        'netherite_hoe',
+        'turtle_helmet',
+        'trident',
+        'bow',
+        'crossbow',
+        'fishing_rod',
+        'shears',
+        'shield',
+        'elytra',
+        'flint_and_steel',
+        'carrot_on_a_stick',
+        'warped_fungus_on_a_stick',
+        'compass'
+    ],
+    /**
+     * @param {Item} item 
+     */
+    isEnchantable: (item) => {
+        return module.exports.enchantable.includes(item.name);
+    },
+    /**
+     * @param {Item} item 
+     */
+    canBeEnchanted: (item) => {
+        if (item.nbt !== null) {
+            if (item.nbt.value !== null) console.log(item.nbt.value['Enchantments'].value.value);
+        }
+        return module.exports.isEnchantable(item) && (item.nbt === null? true : item.nbt.value['Enchantments'] === null);
+    },
 }
