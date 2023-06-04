@@ -1,4 +1,5 @@
 const assert = require('assert');
+const Command = require('../command');
 const search = require('../util/search-ex');
 
 module.exports = {
@@ -12,39 +13,33 @@ module.exports = {
                 this.value = value;
                 this.name = name;
                 module.exports.existingStateNames.push(this.name);
-                this.start = (self) => {};
-                /**
-                 * @param {function} change 
-                 */
-                this.loop = (self, change) => {};
-                /**
-                 * @param {function} change 
-                 */
-                this.terminate = (self, change) => {};
+                this.start = new Command(async (bot) => {});
+                this.loop = new Command(async (bot) => {});
+                this.terminate = new Command(async (bot) => {});
                 module.exports.states.push(this);
             }
             /**
-             * @param {function} func 
-             * @returns The instance of the state whose function is being set
+             * @param {Command} command 
+             * @returns The instance of the state whose Command is being set
              */
-        setStart(func) {
-                this.start = func;
+        setStart(command) {
+                this.start = command;
                 return this;
             }
             /**
-             * @param {function} func 
-             * @returns The instance of the state whose function is being set
+             * @param {Command} command 
+             * @returns The instance of the state whose Command is being set
              */
-        setLoop(func) {
-                this.loop = func;
+        setLoop(command) {
+                this.loop = command;
                 return this;
             }
             /**
-             * @param {function} func 
-             * @returns The instance of the state whose function is being set
+             * @param {Command} command 
+             * @returns The instance of the state whose Command is being set
              */
-        setTerminate(func) {
-            this.terminate = func;
+        setTerminate(command) {
+            this.terminate = command;
             return this;
         }
     },

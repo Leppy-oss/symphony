@@ -4,11 +4,10 @@ const { pathfinder, Movements, goals: { GoalBlock, GoalFollow, GoalNear } } = re
 const pvp = require('mineflayer-pvp').plugin;
 const options = require('./bot-options');
 const colors = require('./logger-colors');
-require('dotenv').config('.env');
 const Logger = require('./logger');
-const chalk = require('chalk');
 const StateController = require('./framework/state-controller');
 const vec3 = require('vec3')
+require('dotenv').config('.env');
 
 module.exports = class {
     constructor(username, password, auth) {
@@ -46,8 +45,8 @@ module.exports = class {
         if (process.env.MASTER !== undefined) this.setMaster(process.env.MASTER);
         this.updateIntervalID = setInterval(this.update, 100); // updates the bot 10x a second
     }
-    update() {
-        this.controller.update();
+    async update() {
+        await this.controller.update(this);
     }
     setMaster(master) {
         this.master = master;
