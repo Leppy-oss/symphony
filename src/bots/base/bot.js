@@ -1,5 +1,4 @@
 const BotEx = require('./bot-ex');
-const commands = require('../enchanting-bot/enchanting-bot-commands');
 
 module.exports = class extends BotEx {
     constructor(username, password, auth, commands) {
@@ -24,6 +23,6 @@ module.exports = class extends BotEx {
     }
     async chatActions(message) {
         await super.chatActions(message);
-        if (message in commands) await this.addState(this.commands[message]);
+        if (message in this.commands) await this.addState(this.commands[message]);
     }
 }

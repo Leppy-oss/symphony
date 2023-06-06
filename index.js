@@ -1,5 +1,5 @@
 const mineflayer = require('mineflayer');
-const EnchantingBot = require('./src/bots/enchanting-bot/enchanting-bot');
+const VillagerBot = require('./src/bots/villager-bot/villager-bot');
 
 module.exports = {
     bots: [],
@@ -8,7 +8,7 @@ module.exports = {
 
 const numBots = 1;
 for (var i = 0; i < numBots; i++) {
-    const bot = new EnchantingBot('Test_Bot_'+i, '', 'offline');
+    const bot = new VillagerBot('Test_Bot_'+i, '', 'offline');
     bot.connect();
     module.exports.bots.push(bot);
     module.exports.botUsernames.push(bot.connectionOptions.username);
