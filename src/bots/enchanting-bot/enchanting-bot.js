@@ -56,7 +56,6 @@ module.exports = class extends Bot {
              * @param {Bot} bot 
              */
             async (bot) => {
-                console.log('a')
                 return bot.controller.states.find((state) => state.isDynamic()) === undefined;
             }
         )).assertStatic();

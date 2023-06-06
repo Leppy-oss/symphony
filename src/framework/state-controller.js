@@ -29,7 +29,7 @@ module.exports = class {
             this.states.at(index) = nextState;
             await nextState.start.action(bot);
         }
-        else if (state.shouldTerminate && await state.terminationCondition.action(bot)) this.states.splice(index, index + 1); // terminate the state sequence
+        else if (state.shouldTerminate || await state.terminationCondition.action(bot)) this.states.splice(index, index + 1); // terminate the state sequence
     }
 
     async update(bot) {
