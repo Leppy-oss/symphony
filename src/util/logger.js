@@ -13,7 +13,7 @@ module.exports = class {
         console.log(`<${username}>:`, ...msg);
     }
     chatLog = (username, msg) => {
-        if (!require('../index').botUsernames.includes(username)) this.mcLog(colors.player(username), colors.chat(msg));
+        if (!require('../../index').botUsernames.includes(username)) this.mcLog(colors.player(username), colors.chat(msg));
     }
     log = (...msg) => {
         assert(this.botName.length > 0);

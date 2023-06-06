@@ -1,10 +1,9 @@
 const BotEx = require('./bot-ex');
-const commands = require('./enchanting-bot-commands');
+const commands = require('../enchanting-bot/enchanting-bot-commands');
 
 module.exports = class extends BotEx {
     constructor(username, password, auth, commands) {
         super(username, password, auth);
-        this.States = module.exports.States;
         this.chatActions = this.chatActions.bind(this);
         this.commands = commands;
     }
@@ -14,8 +13,8 @@ module.exports = class extends BotEx {
     init() {
         super.init();
     }
-    async setState(state) {
-        await this.controller.changeState(state);
+    async addState(state) {
+        await this.controller.add(state, this);
     }
     deathHandler() {
         super.deathHandler();
@@ -25,6 +24,6 @@ module.exports = class extends BotEx {
     }
     async chatActions(message) {
         await super.chatActions(message);
-        if (message in commands) await this.commands[message].action(this)
+        if (message in commands) await this.addState(this.commands[message]);
     }
 }

@@ -1,5 +1,5 @@
 const mineflayer = require('mineflayer');
-const EnchantingBot = require('./src/enchanting-bot');
+const EnchantingBot = require('./src/bots/enchanting-bot/enchanting-bot');
 
 module.exports = {
     bots: [],

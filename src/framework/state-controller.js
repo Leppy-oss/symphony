@@ -1,30 +1,50 @@
-const state = require('./state');
+const State = require('./state');
+const Queue = require('./state-queue');
 
 module.exports = class {
     /**
      * @param {state.State | null} initialState 
      */
-    constructor(initialState = null) {
-        if (initialState === null) {
-            if (!state.hasStates()) state.createState('DEFAULT');
-            this.state = state.getState('DEFAULT');
-        } else this.state = initialState;
+    constructor(initialStates=null) {
+        this.queues = [];
+        this.states = [];
+        if (initialStates === null) {
+            if (!State.hasState('DEFAULT')) State.createState('DEFAULT');
+            const state = State.getState('DEFAULT');
+            this.queueState
+        } else this.states = initialStates;
         this.update = this.update.bind(this);
-        this.changeState = this.changeState.bind(this);
+        this.stateChange = this.stateChange.bind(this);
+        this.add = this.add.bind(this);
     }
 
     /**
-     * @param {state.State} newState 
+     * @param {State.State} newState 
      */
-    async changeState(newState) {
-        this.state.terminate(this.state, this.changeState);
-        if (typeof newState == state.State) this.state = newState;
-        else if (typeof newState == Number) this.state = state.getState(null, newState);
-        else this.state = state.getState(newState);
-        this.state.start(bot);
+    async stateChange(state, bot) {
+        await state.stop.action(bot);
+        const nextState = state.nextState;
+        const index = this.states.findIndex((_state) => _state === state);
+        if (nextState !== null) {
+            this.states.at(index) = nextState;
+            await nextState.start.action(bot);
+        }
+        else if (state.shouldTerminate && await state.terminationCondition.action(bot)) this.states.splice(index, index + 1); // terminate the state sequence
     }
 
-    async update (bot) {
-        await this.state.loop.action(bot);
+    async update(bot) {
+        const statesToChange = [];
+        for (const i in this.states) {
+            const state = this.states[i];
+            const ret = await state.loop.action(bot);
+            if (ret === undefined || ret) statesToChange.push(state);
+        }
+        for (const _state of statesToChange) await this.stateChange(_state, bot);
+    }
+
+    async add(state, bot) {
+        if (typeof state === 'string' || state instanceof String) state = State.getState(state);
+        this.states.push(state);
+        await state.start.action(bot);
     }
 }

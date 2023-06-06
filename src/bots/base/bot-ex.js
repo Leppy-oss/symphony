@@ -2,10 +2,10 @@ const mineflayer = require('mineflayer');
 const { Entity } = require('prismarine-entity');
 const { pathfinder, Movements, goals: { GoalBlock, GoalFollow, GoalNear } } = require('mineflayer-pathfinder');
 const pvp = require('mineflayer-pvp').plugin;
-const options = require('./bot-options');
-const colors = require('./logger-colors');
-const Logger = require('./logger');
-const StateController = require('./framework/state-controller');
+const options = require('../../bot-options');
+const colors = require('../../util/logger-colors');
+const Logger = require('../../util/logger');
+const StateController = require('../../framework/state-controller');
 const vec3 = require('vec3')
 require('dotenv').config('.env');
 

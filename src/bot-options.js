@@ -1,11 +1,11 @@
 module.exports = {
     connectionOptions: {
         host: 'localhost',
-        port: '50902',
+        port: '55646',
         username: 'Test_Bot',
         password: '',
         auth: 'offline',
-        version: '1.19'
+        version: '1.19.3'
     },
     botOptions: {
         viewer: false,

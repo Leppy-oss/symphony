@@ -1,6 +1,6 @@
 const mineflayer = require('mineflayer');
 const { Item } = require('prismarine-item')
-const mcData = require('minecraft-data')('1.19');
+const mcData = require('minecraft-data')('1.19.3');
 
 module.exports = {
     minecraftData: require('minecraft-data')(require('../bot-options').connectionOptions.version),
@@ -396,9 +396,6 @@ module.exports = {
      * @param {Item} item 
      */
     canBeEnchanted: (item) => {
-        if (item.nbt !== null) {
-            if (item.nbt.value !== null) console.log(item.nbt.value['Enchantments'].value.value);
-        }
-        return module.exports.isEnchantable(item) && (item.nbt === null? true : item.nbt.value['Enchantments'] === null);
+        return module.exports.isEnchantable(item) && (item.enchants.length < 1);
     },
 }
