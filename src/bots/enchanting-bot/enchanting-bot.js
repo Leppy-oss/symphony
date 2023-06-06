@@ -1,16 +1,9 @@
-const options = require('../../bot-options');
-const chalk = require('chalk');
-const mineflayer = require('mineflayer');
 const vec3 = require('vec3');
 const bot = require('../base/bot-ex');
-const Logger = require('../../util/logger');
-const { mineflayer: mineflayerViewer } = require('prismarine-viewer');
-const { pathfinder, Movements, goals: { GoalNear, GoalFollow }, goals } = require('mineflayer-pathfinder')
 const commands = require('./enchanting-bot-commands');
 const Command = require('../../framework/command');
 require('dotenv').config({ path: '.env' });
 const StateManager = require('../../framework/state');
-const StateController = require('../../framework/state-controller');
 const Bot = require('../base/bot');
 const colors = require('../../util/logger-colors');
 const { minecraftData, isSmeltable, canBeEnchanted, isEnchantable } = require('../../util/mcdata-ex');
@@ -97,25 +90,54 @@ module.exports = class extends Bot {
                 const lapis_id = minecraftData.itemsByName['lapis_lazuli'].id;
                 const table_block = bot.client.findBlock({
                     matching: table_id,
-                    maxDistance: 20
+                    maxDistance: 40
                 });
+                if (!table_block) {
+                    bot.logger.debugLog('Could not enchant due to no table nearby');
+                    bot.client.chat('No enchanting tables nearby!');
+                    return;
+                }
                 if (table_block.position.distanceTo(bot.client.entity.position) > 3) await bot.goto(table_block.position, 1);
                 const table = await bot.client.openEnchantmentTable(table_block);
-                bot.logger.debugLog(`Bot currently has ${bot.client.experience.level} levels`);
                 const lapis = table.items().find(item => item.type == lapis_id);
                 const sword = table.items().find(item => item.name.includes('sword') && canBeEnchanted(item));
+                const xp = bot.client.experience.level;
     
-                if (lapis && sword) {
-                    bot.logger.actionLog('Attempting to enchant sword with 3rd tier enchantment');
+                if (lapis && sword && xp > 0) {
+                    bot.logger.debugLog(`Bot currently has ${bot.client.experience.level} levels`);
+                    bot.logger.actionLog('Attempting to enchant sword');
                     await bot.client.moveSlotItem(sword.slot, 0);
                     await bot.client.moveSlotItem(lapis.slot, 1);
                     await bot.client.waitForTicks(10);
-                    await table.enchant(2);
+                    const level1 = table.enchantments.at(0);
+                    const level2 = table.enchantments.at(1);
+                    const level3 = table.enchantments.at(2);
+                    let selectedEnchant = 2;
+                    if (xp < level1.level || lapis.count < 1) { // lapis.count should never be less than 1
+                        bot.logger.debugLog(`Bot doesn't have enough levels!`);
+                        return;
+                    }
+                    else if (xp < level2.level || lapis.count < 2) {
+                        bot.logger.debugLog('Selecting enchantment level 1');
+                        selectedEnchant = 0;
+                    }
+                    else if (xp < level3.level || lapis.count < 3) {
+                        bot.logger.debugLog('Selecting enchantment level 2');
+                        selectedEnchant = 1;
+                    }
+                    else {
+                        bot.logger.debugLog('Selecting enchantment level 3');
+                    }
+                    await table.enchant(selectedEnchant);
                     bot.logger.actionLog('Enchanted item');
                     await bot.client.waitForTicks(10);
                     await bot.client.moveSlotItem(0, 2);
                     await bot.client.moveSlotItem(1, 3);
+                    bot.client.chat(`Successfully enchanted ${sword.displayName} with ${table.slots.at(2).enchants.map((enchant) => minecraftData.enchantmentsByName[enchant.name].displayName + ' ' + enchant.lvl).join(', ')}`);
                     bot.logger.actionLog('Completed enchanting sequence');
+                }
+                else {
+                    bot.logger.debugLog(`Bot was not able to enchant due to lack of resources`);
                 }
                 table.close();
             }
@@ -128,10 +150,17 @@ module.exports = class extends Bot {
                 bot.client.chat('Grabbing enchanting materials from nearest chest');
                 const chest_id = minecraftData.blocksByName['chest'].id;
                 const lapis_id = minecraftData.itemsByName['lapis_lazuli'].id;
-                const chest = await bot.client.openContainer(bot.client.findBlock({
+                const chest_block = bot.client.findBlock({
                     matching: chest_id,
-                    maxDistance: 5
-                }));
+                    maxDistance: 40
+                });
+                if (!chest_block) {
+                    bot.logger.debugLog('Could not grab enchanting mats due to no chest nearby');
+                    bot.client.chat('No chests nearby!');
+                    return;
+                }
+                if (chest_block.position.distanceTo(bot.client.entity.position) > 3) await bot.goto(chest_block.position, 1);
+                const chest = await bot.client.openContainer(chest_block);
                 let numDoWork = 0;
                 const availableSlots = [];
                 for (let slot = chest.slots.length - 36; slot < chest.slots.length; slot++) {
