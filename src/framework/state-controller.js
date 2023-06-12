@@ -1,5 +1,4 @@
 const State = require('./state');
-const Queue = require('./state-queue');
 
 module.exports = class {
     /**
@@ -28,6 +27,7 @@ module.exports = class {
         if (nextState !== null) {
             this.states.at(index) = nextState;
             await nextState.start.action(bot);
+            bot.logger.debugLog(`Switched from state ${state.name} to ${nextState.name} on state-queue thread ${index}`);
         }
         else if (state.shouldTerminate || await state.terminationCondition.action(bot)) this.states.splice(index, index + 1); // terminate the state sequence
     }
@@ -45,6 +45,7 @@ module.exports = class {
     async add(state, bot) {
         if (typeof state === 'string' || state instanceof String) state = State.getState(state);
         this.states.push(state);
+        bot.logger.debugLog(`Now starting new state queue ${state.name} on queue thread ${this.states.findIndex((_state) => _state === state)}`);
         await state.start.action(bot);
     }
 }

@@ -6,7 +6,8 @@ require('dotenv').config({ path: '.env' });
 const StateManager = require('../../framework/state');
 const Bot = require('../base/bot');
 const colors = require('../../util/logger-colors');
-const { minecraftData, isSmeltable, canBeEnchanted, isEnchantable } = require('../../util/mcdata-ex');
+const { minecraftData, isSmeltable, canBeEnchanted, isEnchantable, colorify, blocksByNames } = require('../../util/mcdata-ex');
+const { sort } = require('../../util/entity-ex');
 
 module.exports = class extends Bot {
     constructor(username, password, auth) {
@@ -17,7 +18,7 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 bot.logger.log(colors.action('Looking at master ').concat(colors.master(bot.master)));
-                bot.client.chat('Looking at you, master');
+                bot.client.chat('Looking at you');
             }
         )).setLoop(new Command(
             /**
@@ -41,7 +42,7 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 bot.logger.actionLog('Stopping all actions');
-                bot.client.chat('Stopping all actions, master');
+                bot.client.chat('Stopping all actions');
                 bot.client.pathfinder.stop();
             }
         )).repeat(new Command(
@@ -62,7 +63,7 @@ module.exports = class extends Bot {
                     return;
                 }
                 bot.logger.actionLog('Now following master');
-                bot.client.chat('Following, master');
+                bot.client.chat('Following');
                 bot.followMaster();
             }
         ));
@@ -77,16 +78,77 @@ module.exports = class extends Bot {
                     return;
                 }
                 bot.logger.actionLog('Coming to master');
-                bot.client.chat('Coming, master');
+                bot.client.chat('Coming');
                 await bot.goto(target.position, 0, true, true);
             }
         ));
-        StateManager.createState('TRADE_NEAREST').setStart(new Command(
+        StateManager.createState('SLEEP').setStart(new Command(
+            /**
+             * @param {Bot} bot 
+             */
+            async (bot) => {
+                const bedBlock = bot.client.findBlock({
+                    matching: blocksByNames(colorify('bed')),
+                    maxDistance: 30
+                });
+                if (!bedBlock) {
+                    bot.client.chat('No beds within 30 blocks :(');
+                    bot.logger.debugLog('No bed sufficiently close by to sleep');
+                    return;
+                }
+                console.log(bedBlock.position);
+                bot.logger.debugLog('Bed found');
+                if (bedBlock.position.distanceTo(bot.client.entity.position) > 2) {
+                    bot.logger.debugLog(`Heading to bed block at position ${bedBlock.position}`);
+                    await bot.goto(bedBlock.position, 2);
+                }
+                bot.logger.debugLog('Now attempting to use bed (sleep)...');
+                await bot.client.sleep(bedBlock)
+                    .then(() => bot.logger.actionLog('Bot successfully used bed'))
+                    .catch(async (reason) => {
+                        bot.logger.debugLog(`Unable to sleep: ${reason}`);
+                        bot.logger.debugLog('Attempting to at least interact with the bed');
+                        await bot.client.activateBlock(bedBlock)
+                            .then(() => bot.logger.actionLog('Bot successfully interacted with bed -> set respawn point'))
+                            .catch((reason) => {
+                                bot.client.chat(`Unable sleep because ${reason}`);
+                                bot.logger.debugLog(`Unable to interact with bed: ${reason}`);
+                            });
+                    });
+            }
+        ));
+        StateManager.createState('WAKE').setStart(new Command(
+            /**
+             * @param {Bot} bot 
+             */
+            async (bot) => {
+                if (!bot.client.isSleeping) {
+                    bot.client.chat(`I'm not sleeping`);
+                    bot.logger.debugLog('Did not attempt to wake up because bot is already awake');
+                    return;
+                }
+                bot.logger.debugLog('Attempting to wake up');
+                await bot.client.wake();
+                bot.logger.actionLog('Successfully woke up from bed');
+            }
+        ));
+        StateManager.createState('TRADE').setStart(new Command(
             /**
              * @param {Bot} bot
              */
             async (bot) => {
-                console.log(bot.client.entities);
+                var villagers = [];
+                for (const id in bot.client.entities) {
+                    const entity = bot.client.entities[id];
+                    if (entity.name == 'villager') villagers.push(entity);
+                }
+                if (villagers.length < 1) {
+                    bot.logger.debugLog('No villagers nearby, unable to trade!');
+                    return;
+                }
+                villagers = sort(bot.client.entity, villagers);
+                target = villagers.at(0); // for now, only trading with one - so nearestEntity would work, but in the future obviously the bot should trade with multiple villagers
+                await bot.goto(target.position.plus(new vec3(1, 0, 0))); // assume the trading hall is aligned in the Z direction, with villagers on the negative X side of the bot
             }
         ));
         StateManager.createState('GRAB_CHEST').setStart(new Command(
@@ -94,15 +156,17 @@ module.exports = class extends Bot {
              * @param {Bot} bot
              */
             async (bot) => {
-                bot.client.chat('Grabbing enchanting materials from nearest chest');
+                // using a fletcher for now
+                bot.client.chat('Grabbing trading materials from nearest chest');
                 const chest_id = minecraftData.blocksByName['chest'].id;
-                const lapis_id = minecraftData.itemsByName['lapis_lazuli'].id;
+                const emerald_id = minecraftData.itemsByName['emerald'].id;
+                const stick_id = minecraftData.itemsByName['stick'].id;
                 const chest_block = bot.client.findBlock({
                     matching: chest_id,
                     maxDistance: 40
                 });
                 if (!chest_block) {
-                    bot.logger.debugLog('Could not grab enchanting mats due to no chest nearby');
+                    bot.logger.debugLog('Could not grab trading materials due to no chest nearby');
                     bot.client.chat('No chests nearby!');
                     return;
                 }
@@ -133,7 +197,7 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 bot.client.chat('Printing debug info to log');
-                console.log(bot.client.inventory.items())
+                bot.logger.debugLog(`Items currently in bot's inventory: ${bot.client.inventory.items().toString()}`);
             }
         ));
         StateManager.createState('DISCONNECT').setStart(new Command(
@@ -152,7 +216,7 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 bot.logger.actionLog('Dropping all items');
-                bot.client.chat('Dropping all my items, master');
+                bot.client.chat('Dropping all my items');
                 for (const item of bot.client.inventory.items()) await bot.client.tossStack(item);
             }
         ));

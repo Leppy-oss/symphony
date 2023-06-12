@@ -1,6 +1,4 @@
-const mineflayer = require('mineflayer');
 const { Item } = require('prismarine-item')
-const mcData = require('minecraft-data')('1.19.3');
 
 module.exports = {
     minecraftData: require('minecraft-data')(require('../bot-options').connectionOptions.version),
@@ -398,4 +396,75 @@ module.exports = {
     canBeEnchanted: (item) => {
         return module.exports.isEnchantable(item) && (item.enchants.length < 1);
     },
+    colors: [
+        'white',
+        'orange',
+        'magenta',
+        'light_blue',
+        'yellow',
+        'lime',
+        'pink',
+        'gray',
+        'light_gray',
+        'cyan',
+        'purple',
+        'blue',
+        'brown',
+        'green',
+        'red',
+        'black'
+    ],
+    ow_woods: [
+        'oak',
+        'spruce',
+        'dark_oak',
+        'mangrove',
+        'acacia',
+        'birch',
+        'jungle'
+    ],
+    nether_woods: [
+        'crimson',
+        'warped'
+    ],
+    all_woods: () => module.exports.ow_woods.concat(module.exports.nether_woods),
+    /**
+     * @param {string} name
+     * @returns A list of names of the item or block, with the name of each color concatenated before it
+     */
+    colorify: (name) => {
+        return module.exports.colors.concat('asdfasdf').join('_'.concat(name).concat(' ')).split(' ').splice(0, module.exports.colors.length);
+    },
+    /**
+     * @param {string} name
+     * @returns A list of names of the item or block, with each type of OVERWORLD wood concatenated before it
+     */
+    concatWood: (name) => {
+        return module.exports.ow_woods.join('_'.concat(name).concat('\\')).split('\\');
+    },
+    /**
+     * @param {string} name
+     * @returns A list of names of the item or block, with each type of NETHER wood concatenated before it
+     */
+    concatNetherWood: (name) => {
+        return module.exports.nether_woods.join('_'.concat(name).concat('\\')).split('\\');
+    },
+    /**
+     * @param {string} name
+     * @returns A list of names of the item or block, with each type of wood concatenated before it
+     */
+    concatAllWood: (name) => {
+        return module.exports.all_woods.join('_'.concat(name).concat('\\')).split('\\');
+    },
+    /**
+     * @param {string[]} names
+     * @returns A list of mc-data IDs for each name in the array
+     */
+    blocksByNames: (names) => {
+        const ret = [];
+        names.forEach((name) => {
+            ret.push(module.exports.minecraftData.blocksByName[name].id);
+        });
+        return ret;
+    }
 }

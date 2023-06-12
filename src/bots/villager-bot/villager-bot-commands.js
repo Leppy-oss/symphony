@@ -1,5 +1,5 @@
 module.exports = {
-    'trade nearest': 'TRADE_NEAREST',
+    'trade': 'TRADE',
     'chest': 'GRAB_CHEST',
     'print': 'PRINT',
     'kys': 'DISCONNECT',
@@ -7,5 +7,7 @@ module.exports = {
     'follow': 'FOLLOW',
     'stop': 'STOP',
     'look at me': 'LOOK_AT',
-    'drop all': 'DROP_ALL'
+    'drop all': 'DROP_ALL',
+    'sleep': 'SLEEP',
+    'wake': 'WAKE'
 }
