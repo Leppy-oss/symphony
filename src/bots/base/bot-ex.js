@@ -6,7 +6,8 @@ const options = require('../../bot-options');
 const colors = require('../../util/logger-colors');
 const Logger = require('../../util/logger');
 const StateController = require('../../framework/state-controller');
-const vec3 = require('vec3')
+const vec3 = require('vec3');
+const { minecraftData } = require('../../util/mcdata-ex');
 require('dotenv').config('.env');
 
 module.exports = class {
@@ -123,10 +124,17 @@ module.exports = class {
             if (!canPlace) movements.scafoldingBlocks.length = 0;
             movements.maxDropDown = 6;
             movements.liquidCost = 5; // Try to avoid liquids
+            movements.allow1by1towers = true;
+            movements.allowFreeMotion = true;
+            movements.climbables.add(minecraftData.blocksByName['ladder'].id); // no use as of now because "pathfinder cannot use climables"
             this.client.pathfinder.setMovements(movements);
             const { x: tX, y: tY, z: tZ } = position;
             const goal = new GoalNear(tX, tY, tZ, tolerance);
-            await this.client.pathfinder.goto(goal);
+            await this.client.pathfinder.goto(goal)
+                .catch((reason) => {
+                    // this.client.chat(`Unable to reach goal - ${reason}`);
+                    this.logger.debugLog(`Unable to goto target position ${position} - ${reason}`);
+                });
         }
         /**
          * @param {Entity} entity 

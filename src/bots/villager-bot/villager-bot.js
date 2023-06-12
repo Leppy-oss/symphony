@@ -138,6 +138,8 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 var villagers = [];
+                const emerald_id = minecraftData.itemsByName['emerald'].id;
+                const stick_id = minecraftData.itemsByName['stick'].id;
                 for (const id in bot.client.entities) {
                     const entity = bot.client.entities[id];
                     if (entity.name == 'villager') villagers.push(entity);
@@ -147,8 +149,33 @@ module.exports = class extends Bot {
                     return;
                 }
                 villagers = sort(bot.client.entity, villagers);
-                target = villagers.at(0); // for now, only trading with one - so nearestEntity would work, but in the future obviously the bot should trade with multiple villagers
-                await bot.goto(target.position.plus(new vec3(1, 0, 0))); // assume the trading hall is aligned in the Z direction, with villagers on the negative X side of the bot
+                const target = villagers.at(0); // for now, only trading with one - so nearestEntity would work, but in the future obviously the bot should trade with multiple villagers
+                bot.logger.debugLog(`Going to villager at ${target.position}`);
+                await bot.goto(target.position.plus(new vec3(3, 0, 0))); // assume the trading hall is aligned in the Z direction, with villagers on the negative X side of the bot, also assume there is 1 block between the bot and the villager
+                const villager = await bot.client.openVillager(target);
+                bot.logger.debugLog(`Successfully opened villager with id ${villager.id}`);
+                let selectedTrade = null;
+                for (let i = 0; i < villager.trades.length; i++) {
+                    const trade = villager.trades.at(i);
+                    if (trade.inputItem1.type == stick_id) selectedTrade = i;
+                }
+                if (selectedTrade === null || selectedTrade === undefined) {
+                    bot.client.chat('Could not find acceptable trade');
+                    bot.logger.debugLog('Could not find acceptable trade for sticks');
+                    villager.close();
+                    return;
+                }
+                bot.logger.debugLog(`Attempting to trade with villager using trade index ${selectedTrade}`);
+                await bot.client.trade(villager, selectedTrade, 1)
+                    .then(() => {
+                        bot.logger.actionLog('Successfully traded with villager');
+                    })
+                    .catch((reason) => {
+                        bot.logger.debugLog(`An error occurred while attempting to trade: ${reason}`);
+                    })
+                    .finally(()=> {
+                        villager.close();
+                    });
             }
         ));
         StateManager.createState('GRAB_CHEST').setStart(new Command(
@@ -182,7 +209,7 @@ module.exports = class extends Bot {
                 do {
                     numDoWork = 0;
                     for (const item of chest.containerItems()) {
-                        if (canBeEnchanted(item) || item.type === lapis_id) {
+                        if (item.type == emerald_id || item.type == stick_id) {
                             await bot.client.moveSlotItem(item.slot, availableSlots.pop());
                             numDoWork++;
                         }
@@ -197,7 +224,7 @@ module.exports = class extends Bot {
              */
             async (bot) => {
                 bot.client.chat('Printing debug info to log');
-                bot.logger.debugLog(`Items currently in bot's inventory: ${bot.client.inventory.items().toString()}`);
+                console.log(bot.client.inventory.items());
             }
         ));
         StateManager.createState('DISCONNECT').setStart(new Command(
